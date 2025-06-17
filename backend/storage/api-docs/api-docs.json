@@ -1,0 +1,86 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Job Board API",
+        "description": "API documentation for job submission and listing.",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://api-jb.rjmsalamida.test",
+            "description": "Local server"
+        }
+    ],
+    "paths": {
+        "/api/jobPosts": {
+            "get": {
+                "tags": [
+                    "JobPosts"
+                ],
+                "summary": "List all job posts",
+                "operationId": "6da6474d06da978b2a4fe5a8ea79c29c",
+                "responses": {
+                    "200": {
+                        "description": "A list of job posts"
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "JobPosts"
+                ],
+                "summary": "Submit a job post",
+                "operationId": "f2b13ed5b1177794e65e7a697ecab149",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "title",
+                                    "description",
+                                    "email"
+                                ],
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "example": "Senior Backend Engineer"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "We are looking for a Laravel developer..."
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "example": "user@example.com"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Job submitted successfully"
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    },
+                    "500": {
+                        "description": "Server error"
+                    }
+                }
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "JobPosts",
+            "description": "JobPosts"
+        }
+    ]
+}

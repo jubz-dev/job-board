@@ -12,12 +12,31 @@ use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * @OA\Info(
+ *     title="Job Board API",
+ *     version="1.0.0",
+ *     description="API documentation for job submission and listing."
+ * )
+ *
+ * @OA\Server(
+ *     url=L5_SWAGGER_CONST_HOST,
+ *     description="Local server"
+ * )
+ */
 class JobPostController extends Controller
 {
     /**
-     * Display a listing of job posts, including approved internal and external sources.
-     *
-     * @return \Illuminate\Http\JsonResponse
+     * @OA\Get(
+     *     path="/api/jobPosts",
+     *     summary="List all job posts",
+     *     tags={"JobPosts"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="A list of job posts"
+     *     ),
+     *     @OA\Response(response=500, description="Internal server error")
+     * )
      */
     public function index()
     {
@@ -45,10 +64,26 @@ class JobPostController extends Controller
     }
 
     /**
-     * Store a newly submitted job post, sending a moderation email if it’s the first by the user.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @OA\Post(
+     *     path="/api/jobPosts",
+     *     summary="Submit a job post",
+     *     tags={"JobPosts"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"title","description","email"},
+     *             @OA\Property(property="title", type="string", example="Senior Backend Engineer"),
+     *             @OA\Property(property="description", type="string", example="We are looking for a Laravel developer..."),
+     *             @OA\Property(property="email", type="string", example="user@example.com")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Job submitted successfully"
+     *     ),
+     *     @OA\Response(response=400, description="Bad request"),
+     *     @OA\Response(response=500, description="Server error")
+     * )
      */
     public function store(Request $request)
     {
