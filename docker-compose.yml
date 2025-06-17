@@ -53,13 +53,15 @@ services:
       - maildev
     command: >
       sh -c "
-        [ -f .env ] || cp .env.example .env && 
-        composer require pusher/pusher-php-server && 
-        composer install --no-interaction --prefer-dist --optimize-autoloader && 
-        sleep 10 && 
-        php artisan key:generate && 
-        php artisan migrate --force && 
+        [ -f .env ] || cp .env.example .env &&
+        composer install --no-interaction --prefer-dist --optimize-autoloader &&
+        php artisan vendor:publish --provider='L5Swagger\L5SwaggerServiceProvider' --tag=config --force &&
+        php artisan vendor:publish --provider='L5Swagger\L5SwaggerServiceProvider' --tag=views --force &&
+        sleep 10 &&
+        php artisan key:generate &&
+        php artisan migrate --force &&
         php artisan storage:link &&
+        php artisan l5-swagger:generate &&
         php-fpm
       "
 
