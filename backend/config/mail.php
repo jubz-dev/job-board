@@ -115,4 +115,15 @@ return [
         'name' => env('MAIL_FROM_NAME', 'Example'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Moderator Notification Email Address
+    |--------------------------------------------------------------------------
+    |
+    | The email address that will receive moderation alerts for new job posts.
+    |
+    */
+
+    'moderator_address' => env('MODERATOR_EMAIL', 'moderator@example.com'),
+
 ];
