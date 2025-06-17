@@ -1,0 +1,145 @@
+version: '3.9'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-db-job-board
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: dbPassword
+      MYSQL_DATABASE: data_db
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  maildev:
+    image: maildev/maildev
+    container_name: maildev-job-board
+    ports:
+      - "1025:1025"
+      - "1080:1080"
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: ./backend
+    container_name: laravel-backend-job-board
+    volumes:
+      - ./backend:/var/www/html
+    networks:
+      - app-network
+    environment:
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: data_db
+      DB_USERNAME: root
+      DB_PASSWORD: dbPassword
+      MAIL_MAILER: smtp
+      MAIL_HOST: maildev-job-board
+      MAIL_PORT: 1025
+      MODERATOR_EMAIL: moderator@example.com
+      MAIL_FROM_ADDRESS: moderator@example.com
+      MAIL_FROM_NAME: "Job Board Notifier"
+    depends_on:
+      - mysql
+      - maildev
+    command: >
+      sh -c "
+        [ -f .env ] || cp .env.example .env && 
+        composer require pusher/pusher-php-server && 
+        composer install --no-interaction --prefer-dist --optimize-autoloader && 
+        sleep 10 && 
+        php artisan key:generate && 
+        php artisan migrate --force && 
+        php artisan storage:link &&
+        php-fpm
+      "
+
+  scheduler:
+    build:
+      context: ./backend
+    container_name: laravel-scheduler-job-board
+    volumes:
+      - ./backend:/var/www/html
+    networks:
+      - app-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command: >
+      sh -c "
+        until php artisan migrate:status > /dev/null 2>&1; do
+          echo '⏳ Waiting for Laravel...';
+          sleep 2;
+        done &&
+        while true; do
+          php artisan schedule:run >> /dev/null 2>&1;
+          sleep 60;
+        done
+      "
+
+  queue:
+    build:
+      context: ./backend
+    container_name: laravel-queue-job-board
+    volumes:
+      - ./backend:/var/www/html
+    networks:
+      - app-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command: >
+      sh -c "
+        until php artisan migrate:status > /dev/null 2>&1; do
+          echo '⏳ Waiting for Laravel migrations...';
+          sleep 2;
+        done &&
+        php artisan queue:work
+      "
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: vue-frontend-job-board
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - app-network
+    command: >
+      sh -c "
+        [ -f .env ] || cp .env.example .env && 
+        npm install && 
+        npm run dev -- --host
+      "
+
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: nginx-server-job-board
+    ports:
+      - "8010:80"
+    volumes:
+      - ./backend:/var/www/html
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - app-network
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
+
+networks:
+  app-network:
+    driver: bridge
